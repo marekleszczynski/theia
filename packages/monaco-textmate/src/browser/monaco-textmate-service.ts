@@ -6,13 +6,13 @@
  */
 
 import { injectable, inject, named } from "inversify";
-import { LanguageGrammarDefinitionContribution } from "./textmate-contribution";
+import { wireTmGrammars } from 'monaco-editor-textmate';
 import { Registry } from 'monaco-textmate';
 import { ContributionProvider, ILogger, Disposable, DisposableCollection } from "@theia/core";
-import { TextmateRegistry } from "./textmate-registry";
 import { MonacoTextModelService } from "@theia/monaco/lib/browser/monaco-text-model-service";
-// import { wireTmGrammars } from 'monaco-editor-textmate';
-import * as monacoNmsp from 'monaco-editor';
+import { LanguageGrammarDefinitionContribution } from "./textmate-contribution";
+import { MonacoTextmateServer } from '../common/monaco-textmate-protocol';
+import { TextmateRegistry } from "./textmate-registry";
 
 @injectable()
 export class MonacoTextmateService implements Disposable {
@@ -20,6 +20,9 @@ export class MonacoTextmateService implements Disposable {
     protected readonly toDispose = new DisposableCollection();
 
     protected textmateRegistry: Registry;
+
+    @inject(MonacoTextmateServer)
+    protected readonly tmServer: MonacoTextmateServer;
 
     @inject(ContributionProvider) @named(LanguageGrammarDefinitionContribution)
     protected readonly grammarProviders: ContributionProvider<LanguageGrammarDefinitionContribution>;
@@ -32,8 +35,6 @@ export class MonacoTextmateService implements Disposable {
 
     @inject(ILogger)
     protected readonly logger: ILogger;
-
-    constructor() { }
 
     init() {
         for (const grammarProvider of this.grammarProviders.getContributions()) {
@@ -52,19 +53,6 @@ export class MonacoTextmateService implements Disposable {
                 };
             }
         });
-
-        /**
-         * TODO wire textmate grammars with the appropriate
-         * language ID -> scopeName from TM using wireTmGrammars
-         * (https://github.com/NeekSandhu/monaco-editor-textmate/blob/master/src/index.ts#L36)
-         */
-
-        // this.grammarDefinition.forEach(grammar => {
-        //     grammars.set(grammar.languageId, grammar.scopeName);
-        // });
-
-        // wireTmGrammars(monaco, this.textmateRegistry, grammars);
-        // }
 
         this.toDispose.push(this.monacoModelService.onDidCreate(model => {
             setTimeout(() => {
@@ -92,74 +80,15 @@ export class MonacoTextmateService implements Disposable {
         // console.log((<any>monacoNmsp.editor.getModels()[0])._tokens.tokenizationSupport);
     }
 
+    getAvailableTextmateThemes(): Promise<string[]> {
+        return this.tmServer.getAvailableTextmateThemes();
+    }
+
+    getThemeRules(name: string): Promise<string[]> {
+        return this.tmServer.getThemeRules(name);
+    }
+
     dispose(): void {
         this.toDispose.dispose();
     }
-}
-
-import { StackElement, INITIAL } from 'monaco-textmate';
-// const grammarjs = require('monaco-textmate/dist/grammar');
-
-class TokenizerState implements monacoNmsp.languages.IState {
-
-    constructor(
-        private _ruleStack: StackElement
-    ) { }
-
-    public get ruleStack(): StackElement {
-        return this._ruleStack;
-    }
-
-    public clone(): TokenizerState {
-        return new TokenizerState(this._ruleStack);
-    }
-
-    public equals(other: monaco.languages.IState): boolean {
-        if (!other ||
-            !(other instanceof TokenizerState) ||
-            other !== this ||
-            other._ruleStack !== this._ruleStack
-        ) {
-            return false;
-        }
-        return true;
-    }
-}
-
-/**
- * Wires up monaco-editor with monaco-textmate
- *
- * @param monaco monaco namespace this operation should apply to (usually the `monaco` global unless you have some other setup)
- * @param registry TmGrammar `Registry` this wiring should rely on to provide the grammars
- * @param languages `Map` of language ids (string) to TM names (string)
- */
-export function wireTmGrammars(monaco: typeof monacoNmsp, registry: Registry, languages: Map<string, string>) {
-    return Promise.all(
-        Array.from(languages.keys())
-            .map(async languageId => {
-                const grammar = await registry.loadGrammar(languages.get(languageId)!);
-                monaco.languages.setTokensProvider(languageId, {
-                    getInitialState: () => new TokenizerState(INITIAL),
-                    tokenize: (line: string, state: TokenizerState) => {
-                        const res = grammar.tokenizeLine(line, state.ruleStack);
-                        // console.log(state.ruleStack);
-                        // console.log(res.tokens.map(token => token.scopes));
-
-                        // console.log(res.tokens.map(
-                        //     token => `"${line.slice(token.startIndex, token.endIndex)}": ${token.scopes.join(' ')}`
-                        // ));
-
-                        return {
-                            endState: new TokenizerState(res.ruleStack),
-                            tokens: res.tokens.map(token => ({
-                                ...token,
-                                // TODO: At the moment, monaco-editor doesn't seem to accept array of scopes
-                                scopes: /* */ token.scopes[token.scopes.length - 1] /*/ token.scopes.join('#') // */
-                                // scopes: token.scopes as any,
-                            })),
-                        };
-                    }
-                });
-            })
-    );
 }

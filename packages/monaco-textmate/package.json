@@ -14,7 +14,8 @@
   },
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/monaco-textmate-frontend-module"
+      "frontend": "lib/browser/monaco-textmate-frontend-module",
+      "backend": "lib/node/monaco-textmate-backend-module"
     }
   ],
   "keywords": [
@@ -31,7 +32,9 @@
   "homepage": "https://github.com/theia-ide/theia",
   "files": [
     "lib",
-    "src"
+    "src",
+    "themes",
+    "grammars"
   ],
   "scripts": {
     "prepare": "yarn run clean && yarn run build",

@@ -6,23 +6,25 @@
  */
 
 import { interfaces, ContainerModule } from 'inversify';
-import { FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { MonacoTextmateFrontendApplicationContribution } from './monaco-textmate-frontend-contribution';
+import { FrontendApplicationContribution, WebSocketConnectionProvider } from '@theia/core/lib/browser';
 import { bindContributionProvider } from '@theia/core';
-import { TypescriptLanguageGrammarContribution } from './typescript-textmate-contribution';
+import { MonacoTextmateServer, monacoTextmatePath } from '../common/monaco-textmate-protocol';
+import { MonacoTextmateFrontendApplicationContribution } from './monaco-textmate-frontend-contribution';
 import { LanguageGrammarDefinitionContribution } from './textmate-contribution';
-import { MonacoTextmateService } from './monaco-textmate-service';
-import { JavascriptLanguageGrammarContribution } from './javascript-textmate-contribution';
 import { TextmateRegistry, TextmateRegistryImpl } from './textmate-registry';
+import { MonacoTextmateService } from './monaco-textmate-service';
+import { MonacoTextmateBuiltinGrammarContribution } from '.';
 
 export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: interfaces.IsBound, rebind: interfaces.Rebind) => {
     bind(FrontendApplicationContribution).to(MonacoTextmateFrontendApplicationContribution).inSingletonScope();
-    bind(MonacoTextmateService).toSelf().inSingletonScope();
-
     bindContributionProvider(bind, LanguageGrammarDefinitionContribution);
 
     bind(TextmateRegistry).to(TextmateRegistryImpl).inSingletonScope();
+    bind(LanguageGrammarDefinitionContribution).to(MonacoTextmateBuiltinGrammarContribution).inSingletonScope();
 
-    bind(LanguageGrammarDefinitionContribution).to(TypescriptLanguageGrammarContribution);
-    bind(LanguageGrammarDefinitionContribution).to(JavascriptLanguageGrammarContribution);
+    bind(MonacoTextmateServer).toDynamicValue(ctx => {
+        const connection = ctx.container.get(WebSocketConnectionProvider);
+        return connection.createProxy<MonacoTextmateServer>(monacoTextmatePath);
+    }).inSingletonScope();
+    bind(MonacoTextmateService).toSelf().inSingletonScope();
 });

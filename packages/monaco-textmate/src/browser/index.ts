@@ -7,9 +7,9 @@
 
 // export * from './monaco-textmate-colorizer';
 export * from './monaco-textmate-frontend-contribution';
+export * from './monaco-textmate-grammar-contribution';
 export * from './monaco-textmate-frontend-module';
 export * from './monaco-textmate-service';
 export * from './textmate-contribution';
-export * from './javascript-textmate-contribution';
 export * from './textmate-registry';
 export * from './textmate-contribution';
