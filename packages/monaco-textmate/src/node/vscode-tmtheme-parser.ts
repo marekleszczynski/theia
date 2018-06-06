@@ -55,7 +55,7 @@ export class VscodeTextmateThemeParser implements ThemeParser {
                 }, {});
 
                 rules.push({
-                    token: scope, ...settings
+                    ...settings, token: scope
                 });
             }
         }

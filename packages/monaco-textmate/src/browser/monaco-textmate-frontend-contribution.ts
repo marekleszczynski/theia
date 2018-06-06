@@ -23,9 +23,7 @@ export class MonacoTextmateFrontendApplicationContribution implements FrontendAp
     }
 
     async loadTheme(name: string) {
-        console.log('ASKING THE BACKEND FOR THE RULES');
         const rules: any = await this.tmService.getThemeRules(name);
-        console.log('RULES', rules);
 
         monaco.editor.defineTheme('mehmehmeh', {
             base: 'vs-dark',

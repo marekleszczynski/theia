@@ -72,12 +72,10 @@ export class MonacoTextmateService implements Disposable {
         }
 
         try {
-            await wireTmGrammars(monaco as any, this.textmateRegistry, new Map([[languageId, scopeName]]));
+            await wireTmGrammars(monaco as any, this.textmateRegistry, new Map([[languageId, scopeName]])); // tslint:disable-line
         } catch (err) {
             this.logger.warn('No grammar for this language id', languageId);
         }
-
-        // console.log((<any>monacoNmsp.editor.getModels()[0])._tokens.tokenizationSupport);
     }
 
     getAvailableTextmateThemes(): Promise<string[]> {

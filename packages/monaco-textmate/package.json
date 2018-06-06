@@ -33,8 +33,7 @@
   "files": [
     "lib",
     "src",
-    "themes",
-    "grammars"
+    "data"
   ],
   "scripts": {
     "prepare": "yarn run clean && yarn run build",
